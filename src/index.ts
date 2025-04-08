@@ -1,25 +1,24 @@
-import { ImageAnnotatorClient } from '@google-cloud/vision';
+import { ImageAnnotatorClient } from "@google-cloud/vision";
 
 const client = new ImageAnnotatorClient();
 
 function detectFace(fileName: string) {
-    console.log(`Running logo detection on ${fileName}`);
-    client.logoDetection(fileName)
+  console.log(`Running logo detection on ${fileName}`);
+  client
+    .logoDetection(fileName)
     .then(([result]) => {
-        let scores: number[] = [];
-        const logos = result.logoAnnotations;
-        logos?.forEach((logo) => {
-            if (logo.description)
-                console.log(`"${logo.description}" found in in file ${fileName}`);
-            if (logo.score)
-                scores.push(logo.score);
-        });
-        const avg = scores.reduce((a, b) => a + b) / scores.length;
-        console.log(`Average score for ${fileName}: ${avg}`);
+      let scores: number[] = [];
+      const logos = result.logoAnnotations;
+      logos?.forEach((logo) => {
+        if (logo.description)
+          console.log(`"${logo.description}" found in in file ${fileName}`);
+        if (logo.score) scores.push(logo.score);
+      });
+      const avg = scores.reduce((a, b) => a + b) / scores.length;
+      console.log(`Average score for ${fileName}: ${avg}`);
     })
     .catch((err) => {
-        if (err.code === 'ENOENT')
-            console.log(`File ${fileName} not found`);
+      if (err.code === "ENOENT") console.log(`File ${fileName} not found`);
     });
 }
 
@@ -28,43 +27,69 @@ function detectFace(fileName: string) {
  * @param fileNames - An array of file names to run logo detection on.
  * @returns void
  */
-function main (fileNames: string[]): void {
-    fileNames.forEach((fileName: string) => {
-        console.log(`Running logo detection on ${fileName}`);
-        client.logoDetection(fileName)
-        .then(([result]) => {
-            let scores: number[] = [];
-            const logos = result.logoAnnotations;
-            logos?.forEach((logo) => {
-                if (logo.description)
-                    console.log(`"${logo.description}" found in in file ${fileName}`);
-                if (logo.score)
-                    scores.push(logo.score);
-            });
-            const avg = scores.reduce((a, b) => a + b) / scores.length;
-            console.log(`Average score for ${fileName}: ${avg}`);
-        })
-        .catch((err) => {
-            if (err.code === 'ENOENT')
-                console.log(`File ${fileName} not found`);
+function main(fileNames: string[]): void {
+  fileNames.forEach((fileName: string) => {
+    console.log(`Running logo detection on ${fileName}`);
+    client
+      .logoDetection(fileName)
+      .then(([result]) => {
+        let scores: number[] = [];
+        const logos = result.logoAnnotations;
+        console.log("RAW logos:", logos);
+        logos?.forEach((logo) => {
+          if (logo.description)
+            console.log(`"${logo.description}" found in in file ${fileName}`);
+          if (logo.score) scores.push(logo.score);
         });
-    });
+        const avg = scores.reduce((a, b) => a + b) / scores.length;
+        console.log(`Average score for ${fileName}: ${avg}`);
+      })
+      .catch((err) => {
+        if (err.code === "ENOENT") console.log(`File ${fileName} not found`);
+      });
+  });
 }
 
 // Implement the async version of the above here
 // Your version should not use .then and should use try/catch instead of .catch
 async function mainAsync(fileNames: string[]): Promise<void> {
-    // Your code here
+  for (const fileName of fileNames) {
+    console.log(`Running logo detection on ${fileName}`);
+    try {
+      const [result] = await client.logoDetection(fileName);
+      const logos = result.logoAnnotations;
+      let scores: number[] = [];
+
+      if (logos && logos.length > 0) {
+        logos.forEach((logo) => {
+          if (logo.description)
+            console.log(`"${logo.description}" found in in file ${fileName}`);
+          if (logo.score) scores.push(logo.score);
+        });
+
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        console.log(`Average score for ${fileName}: ${avg}`);
+      } else {
+        console.log(`No logos found in file ${fileName}`);
+      }
+    } catch (err: any) {
+      if (err.code === "ENOENT") {
+        console.log(`File ${fileName} not found`);
+      } else {
+        console.error(`Error for ${fileName}:`, err.message || err);
+      }
+    }
+  }
 }
 
-main([
-    './images/cmu.jpg', 
-    './images/logo-types-collection.jpg', 
-    './images/not-a-file.jpg'
-]);
+// main([
+//   "./images/cmu.jpg",
+//   "./images/logo-types-collection.jpg",
+//   "./images/not-a-file.jpg",
+// ]);
 
 mainAsync([
-    './images/cmu.jpg', 
-    './images/logo-types-collection.jpg', 
-    './images/not-a-file.jpg'
+  "./images/cmu.jpg",
+  "./images/logo-types-collection.jpg",
+  "./images/not-a-file.jpg",
 ]);
